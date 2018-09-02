@@ -23,7 +23,6 @@ dirname = 'mafengwo_notes/'
 # 创建 Bloom Filter
 download_bf = BloomFilter(1024 * 1024 * 16, 0.01)
 
-
 def download_city_notes(id):
     for i in range(1, 999):
         url = 'http://www.mafengwo.cn/yj/%s/1-0-%d.html' % (id, i)
@@ -57,23 +56,27 @@ def download_city_notes(id):
                 print( err )
                 raise err
 
-# 检查用于存储网页文件夹是否存在，不存在则创建
-if not os.path.exists(dirname):
-    os.makedirs(dirname)
+def start_crawl():
+    # 检查用于存储网页文件夹是否存在，不存在则创建
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
 
-try:
-    # 下载目的地的首页
-    http = urllib3.PoolManager()
-    r = http.request('GET', 'http://www.mafengwo.cn/mdd/', headers=request_headers)
-    htmlcontent = r.data
-    
-    # 利用正则表达式，找出所有的城市主页
-    city_home_pages = re.findall('/travel-scenic-spot/mafengwo/\d{5}.html', htmlcontent.decode('utf8'))
+    try:
+        # 下载目的地的首页
+        http = urllib3.PoolManager()
+        r = http.request('GET', 'http://www.mafengwo.cn/mdd/', headers=request_headers)
+        htmlcontent = r.data
+        
+        # 利用正则表达式，找出所有的城市主页
+        city_home_pages = re.findall('/travel-scenic-spot/mafengwo/\d{5}.html', htmlcontent.decode('utf8'))
 
-    # 通过循环，依次下载每个城市下的所有游记
-    for city in city_home_pages:
-        city_ids.append(city[29:34])
-        download_city_notes(city[29:34])
-except Exception as err:
-        print( err )
-        raise err
+        # 通过循环，依次下载每个城市下的所有游记
+        for city in city_home_pages:
+            city_ids.append(city[29:34])
+            download_city_notes(city[29:34])
+    except Exception as err:
+            print( err )
+            raise err
+
+if __name__ == '__main__':
+    start_crawl()
