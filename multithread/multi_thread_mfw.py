@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import urllib3
+import os
 from collections import deque
 import json
 from lxml import etree
@@ -7,7 +10,6 @@ from bloom_filter import BloomFilter
 
 import threading
 import time
-
 
 class CrawlBSF:
     request_headers = {
@@ -22,20 +24,20 @@ class CrawlBSF:
 
     cur_level = 0
     max_level = 5
-    dir_name = 'iterate/'
     iter_width = 50
     downloaded_urls = []
 
-    du_md5_file_name = dir_name + 'download.txt'
-    du_url_file_name = dir_name + 'urls.txt'
+    def __init__(self, url, dir_name):
+        self.dir_name = dir_name
+        self.du_md5_file_name = dir_name + '/download.txt'
+        self.du_url_file_name = dir_name + '/urls.txt'
 
-    bloom_downloaded_urls = BloomFilter(1024 * 1024 * 16, 0.01)
-    bloom_url_queue = BloomFilter(1024 * 1024 * 16, 0.01)
+        self.bloom_downloaded_urls = BloomFilter(1024 * 1024 * 16, 0.01)
+        self.bloom_url_queue = BloomFilter(1024 * 1024 * 16, 0.01)
 
-    cur_queue = deque()
-    child_queue = deque()
+        self.cur_queue = deque()
+        self.child_queue = deque()
 
-    def __init__(self, url):
         self.root_url = url
         self.cur_queue.append(url)
         self.du_file = open(self.du_url_file_name, 'a+')
@@ -67,8 +69,8 @@ class CrawlBSF:
         self.du_file.close()
 
 
+# Global variables
 num_downloaded_pages = 0
-
 
 #download the page content
 def get_page_content(cur_url):
@@ -79,7 +81,7 @@ def get_page_content(cur_url):
         r = http.request('GET', cur_url, headers = CrawlBSF.request_headers)
         html_page = r.data
         filename = cur_url[7:].replace('/', '_')
-        fo = open("%s%s.html" % (crawler.dir_name, filename), 'wb+')
+        fo = open("%s/%s.html" % (crawler.dir_name, filename), 'wb+')
         fo.write(html_page)
         fo.close()
     except IOError as err:
@@ -121,58 +123,62 @@ def get_page_content(cur_url):
         except ValueError:
             continue
 
+def start_crawl():
+    # if it's the first page (start url), if true, crawl it in main thread in sync(blocking) mode
+    # 如果是第一个抓取页面的话，在主线程用同步（阻塞）的模式下载，后续的页面会通过创建子线程的方式异步爬取
+    is_root_page = True
+    threads = []
+    max_threads = 10
 
-crawler = CrawlBSF("http://www.mafengwo.cn")
-start_time = time.time()
+    CRAWL_DELAY = 0.6
 
-# if it's the first page (start url), if true, crawl it in main thread in sync(blocking) mode
-# 如果是第一个抓取页面的话，在主线程用同步（阻塞）的模式下载，后续的页面会通过创建子线程的方式异步爬取
-is_root_page = True
-threads = []
-max_threads = 10
-
-CRAWL_DELAY = 0.6
-
-while True:
-    url = crawler.dequeuUrl()
-    # Go on next level, before that, needs to wait all current level crawling done
-    if url is None:
-        crawler.cur_level += 1
-        for t in threads:
-            t.join()
-        if crawler.cur_level == crawler.max_level:
-            break
-        if len(crawler.child_queue) == 0:
-            break
-        crawler.cur_queue = crawler.child_queue
-        crawler.child_queue = deque()
-        continue
-
-
-    # looking for an empty thread from pool to crawl
-
-    if is_root_page is True:
-        get_page_content(url)
-        is_root_page = False
-    else:
-        while True:    
-            # first remove all finished running threads
+    while True:
+        url = crawler.dequeuUrl()
+        # Go on next level, before that, needs to wait all current level crawling done
+        if url is None:
+            crawler.cur_level += 1
             for t in threads:
-                if not t.is_alive():
-                    threads.remove(t)
-            if len(threads) >= max_threads:
-                time.sleep(CRAWL_DELAY)
-                continue
-            try:
-                t = threading.Thread(target=get_page_content, name=None, args=(url,))
-                threads.append(t)
-                # set daemon so main thread can exit when receives ctrl-c
-                t.setDaemon(True)
-                t.start()
-                time.sleep(CRAWL_DELAY)
+                t.join()
+            if crawler.cur_level == crawler.max_level:
                 break
-            except Exception as err:
-                print( "Error: unable to start thread", err)
-                raise
+            if len(crawler.child_queue) == 0:
+                break
+            crawler.cur_queue = crawler.child_queue
+            crawler.child_queue = deque()
+            continue
 
-print( '%d pages downloaded, time cost %0.2f seconds' % (num_downloaded_pages, time.time()-start_time))
+        # looking for an empty thread from pool to crawl
+        if is_root_page is True:
+            get_page_content(url)
+            is_root_page = False
+        else:
+            while True:    
+                # first remove all finished running threads
+                for t in threads:
+                    if not t.is_alive():
+                        threads.remove(t)
+                if len(threads) >= max_threads:
+                    time.sleep(CRAWL_DELAY)
+                    continue
+                try:
+                    t = threading.Thread(target=get_page_content, name=None, args=(url,))
+                    threads.append(t)
+                    # set daemon so main thread can exit when receives ctrl-c
+                    t.setDaemon(True)
+                    t.start()
+                    time.sleep(CRAWL_DELAY)
+                    break
+                except Exception as err:
+                    print( "Error: unable to start thread", err)
+                    raise
+
+if __name__ == '__main__':
+    start_time = time.time()
+    dir_name = 'htmls'
+    # 检查用于存储网页文件夹是否存在，不存在则创建
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+
+    crawler = CrawlBSF("http://www.mafengwo.cn", dir_name)
+    start_crawl()
+    print( '%d pages downloaded, time cost %0.2f seconds' % (num_downloaded_pages, time.time()-start_time))
