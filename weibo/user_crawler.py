@@ -6,8 +6,6 @@ import time
 
 from mysql_db_manager import CrawlDatabaseManager
 
-start_uid = '1496814565'
-
 CRAWL_DELAY = 2
 
 class UsersCrawler:
@@ -38,20 +36,24 @@ class UsersCrawler:
 
     run = False
 
-    def __init__(self):
+    def __init__(self, uid):
         self.db_manager = CrawlDatabaseManager(10)
+        self.root_uid = uid
 
-    def get_users(self, uid, page):
+    # 根据 uid 来抓取一个用户的关注列表
+    def fetch_users(self, uid, page):
         url = (self.url_format)%(uid, page)
         response = requests.request("GET", url, data=self.payload, headers=self.headers, params=self.querystring)
         return response.text
 
-    def get_uid(self):
+    # 从数据库里获取一个新的uid
+    def next_uid(self):
         uid = self.db_manager.dequeue_user()
         if uid is None:
             return None
         return uid['user_id']
 
+    # 启动一个新的线程开始抓取
     def start(self):
         self.run = True
         t = threading.Thread(target=self.crawl_feeds, name=None)
@@ -60,21 +62,22 @@ class UsersCrawler:
         t.setDaemon(True)
         t.start()
 
+    # 开始抓取用户信息
     def crawl_users(self):
         kickstart = True
         self.run = True
 
         while self.run:
-            uid = self.get_uid()
+            uid = self.next_uid()
             if uid is None:
                 if kickstart:
                     kickstart = False
-                    uid = start_uid
+                    uid = self.root_uid
                 else:
                     print("No more user available")
                     break
 
-            user_str = self.get_users(uid, 1)
+            user_str = self.fetch_users(uid, 1)
 
             print("downloading user of ", uid)
 
@@ -84,6 +87,7 @@ class UsersCrawler:
             f.write(user_str)
             f.close()
 
+            # 数据解析，如果出错，可能是数据为空，继续下一个user
             try:
                 for user in users['data']['cards'][1]['card_group'][1]['users']:
                     print("paring user: ", user['screen_name'])
@@ -103,5 +107,9 @@ class UsersCrawler:
             time.sleep(CRAWL_DELAY)
 
 if __name__ == '__main__':
-    user_crawler = UsersCrawler()
+    # 种子用户，爬虫的第一个节点，需要手动设置
+    root_uid = '1496814565'
+
+    user_crawler = UsersCrawler(root_uid)
+
     user_crawler.crawl_users()

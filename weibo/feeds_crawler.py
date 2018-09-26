@@ -12,8 +12,6 @@ CRAWL_DELAY = 2
 
 MAX_PAGE = 5
 
-start_uid = '1496814565'
-
 class FeedsCrawler:
 
     url_format = "https://m.weibo.cn/api/container/getIndex?uid=%s&type=uid&value=%s&containerid=107603%s&page=%d"
@@ -83,11 +81,11 @@ class FeedsCrawler:
                 except Exception:
                     return time.mktime(time.strptime(time.strftime(u'%Y-') + str_time, u'%Y-%m-%d %H:%M'))
 
-    def get_feeds(self, uid, page):
+    def fetch_feeds(self, uid, page):
         url = (self.url_format)%(uid, uid, uid, page)
         return requests.request("GET", url, data=self.payload, headers=self.headers, params=self.querystring)
 
-    def get_uid(self):
+    def next_uid(self):
         uid = self.db_manager.dequeue_user()
         if uid is None:
             return None
@@ -103,18 +101,13 @@ class FeedsCrawler:
 
     def crawl_feeds(self):
         self.run = True
-        kick_off = True
 
         while self.run:
 
-            uid = self.get_uid()
+            uid = self.next_uid()
             if uid is None:
-                if kickstart:
-                    kickstart = False
-                    uid = start_uid
-                else:
-                    print("No more user available")
-                    break
+                print("No more user available")
+                break
 
             print('uid ', uid)
             if uid is None:
@@ -122,7 +115,7 @@ class FeedsCrawler:
                 break
             page = 1
             while page < MAX_PAGE:
-                feeds_str = self.get_feeds(uid, page)
+                feeds_str = self.fetch_feeds(uid, page)
                 page += 1
                 feeds = json.loads(feeds_str.text)
                 for feed in feeds['data']['cards']:
