@@ -62,12 +62,20 @@ class UsersCrawler:
         self.run = True
 
         while self.run:
-            if kickstart:
-                kickstart = False
-                uid = start_uid
+            uid = self.get_uid()
+            if uid is None:
+                if kickstart:
+                    kickstart = False
+                    uid = start_uid
+                else:
+                    print("No more user available")
+                    break
             else:
-                uid = self.get_uid()
+                uid = uid['user_id']
+
             user_str = self.get_users(uid, 1)
+
+            print("downloading user of ", uid)
 
             users = json.loads(user_str)
 
@@ -75,20 +83,22 @@ class UsersCrawler:
             f.write(user_str)
             f.close()
 
-            if len(users['data']['cards']) == 1:
+            try:
+                for user in users['data']['cards'][1]['card_group'][1]['users']:
+                    print("paring user: ", user['screen_name'])
+                    name = user['screen_name']
+                    user_id = user['id']
+                    followers_count = user['followers_count']
+                    follow_count = user['follow_count']
+                    description = user['description']
+                    self.db_manager.enqueue_user(user_id,
+                                                 name=name,
+                                                 follow_count=follow_count,
+                                                 followers_count=followers_count,
+                                                 description=description)
+            except Exception as err:
                 continue
-            
-            for user in users['data']['cards'][1]['card_group'][1]['users']:
-                name = user['screen_name']
-                user_id = user['id']
-                followers_count = user['followers_count']
-                follow_count = user['follow_count']
-                description = user['description']
-                self.db_manager.enqueue_user(user_id,
-                                             name=name,
-                                             follow_count=follow_count,
-                                             followers_count=followers_count,
-                                             description=description)
+
             time.sleep(CRAWL_DELAY)
 
 if __name__ == '__main__':
