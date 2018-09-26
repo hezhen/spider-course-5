@@ -47,7 +47,10 @@ class UsersCrawler:
         return response.text
 
     def get_uid(self):
-        return self.db_manager.dequeue_user()
+        uid = self.db_manager.dequeue_user()
+        if uid is None:
+            return None
+        return uid['user_id']
 
     def start(self):
         self.run = True
@@ -70,8 +73,6 @@ class UsersCrawler:
                 else:
                     print("No more user available")
                     break
-            else:
-                uid = uid['user_id']
 
             user_str = self.get_users(uid, 1)
 

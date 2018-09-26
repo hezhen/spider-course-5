@@ -47,7 +47,6 @@ class FeedsCrawler:
         pass
 
     def get_time(self, created_time):
-        print('get_time()', created_time)
         # created_time = created_time.replace(' ', '')
         if u'秒前' in created_time:
             return time.time()
@@ -108,16 +107,16 @@ class FeedsCrawler:
 
         while self.run:
 
-            if kick_off:
-                kick_off = False
-                uid = self.get_uid()
-                if uid is None:
+            uid = self.get_uid()
+            if uid is None:
+                if kickstart:
+                    kickstart = False
                     uid = start_uid
                 else:
-                    uid = self.get_uid()
-            else:
-                uid = self.get_uid()
-            print('uid is ', uid)
+                    print("No more user available")
+                    break
+
+            print('uid ', uid)
             if uid is None:
                 self.run = False
                 break
@@ -149,7 +148,7 @@ class FeedsCrawler:
                     # pics = feed['mblog']['pics']
 
             time.sleep(CRAWL_DELAY)
-            # print(feeds)
+            print(feeds)
 
 if __name__ == '__main__':
     feeds_crawler = FeedsCrawler()
