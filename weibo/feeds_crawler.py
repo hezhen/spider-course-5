@@ -12,6 +12,8 @@ CRAWL_DELAY = 2
 
 MAX_PAGE = 5
 
+start_uid = '1496814565'
+
 class FeedsCrawler:
 
     url_format = "https://m.weibo.cn/api/container/getIndex?uid=%s&type=uid&value=%s&containerid=107603%s&page=%d"
@@ -102,9 +104,19 @@ class FeedsCrawler:
 
     def crawl_feeds(self):
         self.run = True
+        kick_off = True
 
         while self.run:
-            uid = self.get_uid()
+
+            if kick_off:
+                kick_off = False
+                uid = self.get_uid()
+                if uid is None:
+                    uid = start_uid
+                else:
+                    uid = self.get_uid()
+            else:
+                uid = self.get_uid()
             print('uid is ', uid)
             if uid is None:
                 self.run = False

@@ -18,7 +18,7 @@ class CrawlDatabaseManager:
         "  `user_id` varchar(32) NOT NULL,"
         "  `status` varchar(11) NOT NULL DEFAULT 'new'," # could be new, downloading and finish
         "  `queue_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-        "  `done_time` timestamp NOT NULL DEFAULT 0 ON UPDATE CURRENT_TIMESTAMP,"
+        "  `done_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
         "  PRIMARY KEY (`index`)"
         ") ENGINE=InnoDB")
 
@@ -36,9 +36,8 @@ class CrawlDatabaseManager:
     def __init__(self, max_num_thread):
         # connect mysql server
         try:
-            cnx = mysql.connector.connect(host=self.SERVER_IP, user='root', password='amei')
+            cnx = mysql.connector.connect(host=self.SERVER_IP, user='root', password='callmepapa', auth_plugin='mysql_native_password')
         except mysql.connector.Error as err:
-            print('Mysql Error ', err)
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
@@ -68,7 +67,7 @@ class CrawlDatabaseManager:
         dbconfig = {
             "database": self.DB_NAME,
             "user":     "root",
-            "password": "amei",
+            "password": "callmepapa",
             "host":     self.SERVER_IP,
         }
         self.cnxpool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
@@ -86,7 +85,7 @@ class CrawlDatabaseManager:
             exit(1)
 
     def create_tables(self, cursor):
-        for name, ddl in self.TABLES.iteritems():
+        for name, ddl in self.TABLES.items():
             try:
                 cursor.execute(ddl)
             except mysql.connector.Error as err:
