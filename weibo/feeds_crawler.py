@@ -45,7 +45,6 @@ class FeedsCrawler:
         pass
 
     def get_time(self, created_time):
-        print('get_time()', created_time)
         # created_time = created_time.replace(' ', '')
         if u'秒前' in created_time:
             return time.time()
@@ -82,11 +81,11 @@ class FeedsCrawler:
                 except Exception:
                     return time.mktime(time.strptime(time.strftime(u'%Y-') + str_time, u'%Y-%m-%d %H:%M'))
 
-    def get_feeds(self, uid, page):
+    def fetch_feeds(self, uid, page):
         url = (self.url_format)%(uid, uid, uid, page)
         return requests.request("GET", url, data=self.payload, headers=self.headers, params=self.querystring)
 
-    def get_uid(self):
+    def next_uid(self):
         uid = self.db_manager.dequeue_user()
         if uid is None:
             return None
@@ -104,14 +103,19 @@ class FeedsCrawler:
         self.run = True
 
         while self.run:
-            uid = self.get_uid()
-            print('uid is ', uid)
+
+            uid = self.next_uid()
+            if uid is None:
+                print("No more user available")
+                break
+
+            print('uid ', uid)
             if uid is None:
                 self.run = False
                 break
             page = 1
             while page < MAX_PAGE:
-                feeds_str = self.get_feeds(uid, page)
+                feeds_str = self.fetch_feeds(uid, page)
                 page += 1
                 feeds = json.loads(feeds_str.text)
                 for feed in feeds['data']['cards']:
@@ -137,7 +141,7 @@ class FeedsCrawler:
                     # pics = feed['mblog']['pics']
 
             time.sleep(CRAWL_DELAY)
-            # print(feeds)
+            print(feeds)
 
 if __name__ == '__main__':
     feeds_crawler = FeedsCrawler()
