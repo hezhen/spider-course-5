@@ -1,8 +1,11 @@
 # Install AnyProxy
 1. Install NodeJS first
 
-    Linux:       $ yum install nodejs 
-    Windows:  https://nodejs.org/dist/v9.0.0/node-v9.0.0-x86.msi
+    Linux:      $yum install nodejs 
+
+    Windows:    https://nodejs.org/dist/v9.0.0/node-v9.0.0-x86.msi
+
+    Mac:        $brew install
 
 2. Change NPM to use taobao repository
 
@@ -18,8 +21,8 @@
 
 5. Fix AnyProxy crash issue:
 
-    Replace /usr/local/lib/node_modules/anyproxy/lib/requestHandler.js with local requestHandler.js. Anyproxy crashes when connection is reset
-    For Windows System, find anyproxy's anyproxy root dir then replace requestHandler.js
+    Replace [_/usr/local/lib/nodemodules/anyproxy/lib/requestHandler.js_]() with local **requestHandler.js**. Anyproxy crashes when connection is reset
+    For Windows System, find anyproxy's anyproxy root dir then replace **requestHandler.js**
 
 6. Start AnyProxy ( -i means parse https )
 
