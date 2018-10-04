@@ -3,7 +3,7 @@
 
     Linux:      `$ yum install nodejs`
 
-    Windows:    https://nodejs.org/dist/v9.0.0/node-v9.0.0-x86.msi
+    Windows:    https://nodejs.org/dist/v10.11.0/node-v10.11.0-x86.msi
 
     Mac:        `$ brew install`
 
