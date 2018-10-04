@@ -1,6 +1,6 @@
 var logMap = {}
 var fs = require('fs');
-var logger = fs.createWriteStream('/Users/hezhen/Sites/dev/wechat/urlLog.log', {
+var logger = fs.createWriteStream('./urlLog.log', {
     flags: 'a' // 'a' means appending (old data will be preserved)
 })
 
@@ -44,7 +44,6 @@ function postData(post_data, path, cb) {
 module.exports = {
     summary: 'a rule to modify response',
     * beforeSendResponse(requestDetail, responseDetail) {
-
         if (/mp.weixin.qq.com/i.test(requestDetail.url)) {
             try { //防止报错退出程序
                 logger.write('report url' + requestDetail.url + '\r\n');
@@ -54,10 +53,10 @@ module.exports = {
                 postData(post_data, 'url', function (chunk) {
                     logger.write("return from server\r\n")
                 });
+                logger.write('done' + '\r\n');
             } catch (e) {
                 logger.write('Error' + e + '\r\n');
             }
-
         }
     },
 };
