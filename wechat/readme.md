@@ -1,23 +1,23 @@
 # Install AnyProxy
 1. Install NodeJS first
 
-    Linux:      $yum install nodejs 
+    Linux:      `$ yum install nodejs`
 
     Windows:    https://nodejs.org/dist/v9.0.0/node-v9.0.0-x86.msi
 
-    Mac:        $brew install
+    Mac:        `$ brew install`
 
 2. Change NPM to use taobao repository
 
-    $ npm install -g cnpm --registry=https://registry.npm.taobao.org
+    `$ npm install -g cnpm --registry=https://registry.npm.taobao.org`
 
 3. Install AnyPorxy
 
-    npm install -g anyproxy
+    `$ npm install -g anyproxy`
 
 4. Generate root certificate and trust it
 
-    anyproxy-ca
+    `$ anyproxy-ca`
 
 5. Fix AnyProxy crash issue:
 
@@ -27,7 +27,7 @@
 6. Start AnyProxy ( -i means parse https )
 
     Use --rule to specify rule defined by javascript
-    anyproxy -i --rule wxrule.js
+    `anyproxy -i --rule wxrule.js`
 
 # Evnironment
 1. set username, host and password to dbconfig of mysqlmgr.py for Mysql config
@@ -46,7 +46,8 @@
 -- webservice.py 后台的web服务，基于 python3，可以通过 http://127.0.0.1:9999 来访问
 
 # Run it
-1. Open url http://[Your Computer IP]:8001 to install certificate to your mobile phone
-2. Set proxy to Host: [Your Computer IP], Port: 8002 on your mobile phone
-3. Start webservice: python3 webservice.py
+1. Open url [http://[Your Computer IP]:8002]() to install certificate to your mobile phone. On iPhone, you must also trust the certificate at **General -> About -> Certificate Trust Settings**
+2. Set proxy to Host: [Your Computer IP], Port: 8001 on your mobile phone
+3. Start webservice: `python3 webservice.py`
 4. Make sure MongoDB and Mysql server are correctly configured and started
+5. Run anyproxy: `anyproxy -i -r biz_collect_rule.js` to collect wechat accounts or `anyproxy -i -r wxrule` to save wechat articles
