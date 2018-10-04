@@ -1,30 +1,30 @@
 # Install AnyProxy
 1. Install NodeJS first
 
-Linux:       $ yum install nodejs 
-Windows:  https://nodejs.org/dist/v9.0.0/node-v9.0.0-x86.msi
+    Linux:       $ yum install nodejs 
+    Windows:  https://nodejs.org/dist/v9.0.0/node-v9.0.0-x86.msi
 
-1. Change NPM to use taobao repository
+2. Change NPM to use taobao repository
 
-$ npm install -g cnpm --registry=https://registry.npm.taobao.org
+    $ npm install -g cnpm --registry=https://registry.npm.taobao.org
 
 3. Install AnyPorxy
 
-npm install -g anyproxy
+    npm install -g anyproxy
 
 4. Generate root certificate and trust it
 
-anyproxy-ca
+    anyproxy-ca
 
 5. Fix AnyProxy crash issue:
 
-Replace /usr/local/lib/node_modules/anyproxy/lib/requestHandler.js with local requestHandler.js. Anyproxy crashes when connection is reset
-For Windows System, find anyproxy's anyproxy root dir then replace requestHandler.js
+    Replace /usr/local/lib/node_modules/anyproxy/lib/requestHandler.js with local requestHandler.js. Anyproxy crashes when connection is reset
+    For Windows System, find anyproxy's anyproxy root dir then replace requestHandler.js
 
 6. Start AnyProxy ( -i means parse https )
 
-Use --rule to specify rule defined by javascript
-anyproxy -i --rule wxrule.js
+    Use --rule to specify rule defined by javascript
+    anyproxy -i --rule wxrule.js
 
 # Evnironment
 1. set username, host and password to dbconfig of mysqlmgr.py for Mysql config
