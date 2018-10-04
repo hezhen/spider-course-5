@@ -3,12 +3,12 @@
 
     https://sites.google.com/a/chromium.org/chromedriver/downloads
 
-    lastest version:
-    https://chromedriver.storage.googleapis.com/index.html?path=2.38/
-
-    From Baidu Pan:
+    lastest version:  
+    https://chromedriver.storage.googleapis.com/index.html?path=2.38/  
+    
+    From Baidu Pan, including driver for MacOS, Windows 64 and Linux:  
     https://pan.baidu.com/s/1OTANr3Jy6g0bnbaxcuQqsw
-    Including driver for MacOS, Windows 64 and Linux
+    
 
 2. Unzip then get chromedriver,put it to any directory in system PATH (e.x: /usr/local/bin/ )
 
