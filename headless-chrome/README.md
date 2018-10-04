@@ -5,7 +5,7 @@
 
     lastest version:  
     https://chromedriver.storage.googleapis.com/index.html?path=2.38/  
-    
+
     From Baidu Pan, including driver for MacOS, Windows 64 and Linux:  
     https://pan.baidu.com/s/1OTANr3Jy6g0bnbaxcuQqsw
     
@@ -58,7 +58,9 @@ with:
 
     driver = webdriver.PhantomJS(executable_path='/usr/local/lib/node_modules/phantomjs/lib/phantom/bin/phantomjs')
 
-References:
-http://selenium-python.readthedocs.org/en/latest/api.html
-How do I set a proxy for phantomjs/ghostdriver in python webdriver?
+References:  
+http://selenium-python.readthedocs.org/en/latest/api.html  
+  
+  
+How do I set a proxy for phantomjs/ghostdriver in python webdriver?  
 http://python.dzone.com/articles/python-testing-phantomjs
