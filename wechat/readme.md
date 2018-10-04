@@ -24,10 +24,10 @@
     Replace [_/usr/local/lib/nodemodules/anyproxy/lib/requestHandler.js_]() with local **requestHandler.js**. Anyproxy crashes when connection is reset
     For Windows System, find anyproxy's anyproxy root dir then replace **requestHandler.js**
 
-6. Start AnyProxy ( -i means parse https )
+6. Start AnyProxy
 
-    Use --rule to specify rule defined by javascript
-    `anyproxy -i --rule wxrule.js`
+    Use --rule to specify rule defined by javascript, -i means parse https, and --ws-intercept means mornitor websocket
+    `anyproxy -i -r wxrule.js --ws-intercept`
 
 # Evnironment
 1. set username, host and password to dbconfig of mysqlmgr.py for Mysql config
