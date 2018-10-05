@@ -45,7 +45,7 @@ def login(driver, username, password):
 
 def enqueueUrl(url):
     try:
-        md5v = hashlib.md5(url).hexdigest()
+        md5v = hashlib.md5(url.encode('utf8')).hexdigest()
         if md5v not in download_bf:
             cur_queue.append(url)
             download_bf.add(md5v)
@@ -103,11 +103,11 @@ def crawl(driver, url):
         href = "https:" + href
         enqueueUrl(href)
 
-    crawl(dequeuUrl())
+    crawl(driver, dequeuUrl())
 
 if __name__ == '__main__':
     driver = create_driver()
-    username = 'abc'
+    username = 'user'
     password = 'password'
     login(driver, username, password)
     start_url = "https://detail.tmall.com/item.htm?id=561009686445"

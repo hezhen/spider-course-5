@@ -42,7 +42,7 @@ def get_page_content(cur_url, index, depth):
     except Exception as err:
         print('Exception: ' + err)
         return
-    # print( 'add ' + hashlib.md5(cur_url).hexdigest() + ' to list')
+    # print( 'add ' + hashlib.md5(cur_url.encode('utf8')).hexdigest() + ' to list')
 
     html = etree.HTML(html_page.lower().decode('utf-8'))
     hrefs = html.xpath(u"//a")

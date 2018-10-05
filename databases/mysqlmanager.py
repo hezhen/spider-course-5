@@ -90,7 +90,7 @@ class CrawlDatabaseManager:
         cursor = con.cursor()
         try:
             add_url = ("INSERT INTO urls (url, md5, depth) VALUES (%s, %s, %s)")
-            data_url = (url, hashlib.md5(url).hexdigest(), depth)
+            data_url = (url, hashlib.md5(url.encode('utf8')).hexdigest(), depth)
             cursor.execute(add_url, data_url)
             con.commit()
         except mysql.connector.Error as err:
