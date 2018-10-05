@@ -1,5 +1,5 @@
 # Install Headless Chrome and webdriver
-1. Download modified chrome driver 2.34 from tools folder
+1. Download modified chrome driver 2.34 from [tools](https://github.com/hezhen/spider-course-5/tree/master/taobao/tools) folder
     
 2. Unzip then get chromedriver, put it to any directory in system PATH (e.x: /usr/local/bin/ )
 
