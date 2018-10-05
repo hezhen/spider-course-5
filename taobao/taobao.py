@@ -1,33 +1,40 @@
 # -*- coding: utf-8 -*-
 import hashlib
 from collections import deque
+from bloom_filter import BloomFilter
 
+# -*- coding: utf-8 -*-
 from selenium import webdriver
 import re
 from lxml import etree
 import time
-from pybloomfilter import BloomFilter
 
-# custom header
-headers = {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
-    'Accept-Charset': 'utf-8',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0',
-    'Connection': 'keep-alive'
-}
+user_agent = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
+)
 
-# set custom headers
-for key, value in headers.iteritems():
-    webdriver.DesiredCapabilities.PHANTOMJS['phantomjs.page.customHeaders.{}'.format(key)] = value
+# 进入浏览器设置
+options = webdriver.ChromeOptions()
+# 设置中文
+options.add_argument('lang=zh_CN.UTF-8')
+# specify the desired user agent
+options.add_argument('user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"')
+options.add_argument("start-maximized")
+options.add_argument("disable-infobars")
+options.add_argument("--disable-extensions")
+options.add_argument("--disable-plugins-discovery")
 
-# another way to set custome header
-webdriver.DesiredCapabilities.PHANTOMJS['phantomjs.page.settings.userAgent'] = \
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36'
+# ---------- Important ----------------
+# 设置为 headless 模式，调试的时候可以去掉
+# -------------------------------------
+# options.add_argument("--headless")
+
+driver = webdriver.Chrome(chrome_options=options)
+driver.delete_all_cookies()
 
 start_url = "https://detail.tmall.com/item.htm?id=540212526343"
-driver = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--load-images=false'])
-driver.set_window_size(1280, 2400)  # optional
+
+driver.get(start_url)
 
 download_bf = BloomFilter(1024*1024*16, 0.01)
 cur_queue = deque()
@@ -47,17 +54,16 @@ def dequeuUrl():
     return cur_queue.popleft()
 
 def crawl(url):
-    print 'crawling ' + url
+    print('crawling ', url)
     # ignore ssl error, optionally can set phantomjs path
     driver.get(url)
 
-
-    time.sleep(5)
+    time.sleep(2)
 
     content = driver.page_source
 
     with open('tmall_cat.html', 'w+') as f:
-        f.write(content.encode('utf-8'))
+        f.write(content)
 
     # 使用 (pattern) 进行获取匹配
     # +? 使用非贪婪模式
@@ -81,22 +87,20 @@ def crawl(url):
     # 直接去除首尾空格
     title = title.strip()
 
-    print '+++++++++++++++++++++++++++'
-    print title
-    print real_price
-    print '---------------------------'
+    print('+++++++++++++++++++++++++++++++++++++++++++++')
+    print('Product: ', title, 'Price: ', real_price)
+    print('---------------------------------------------')
 
     # for link in tmall_links:
-    #     print link
+    #     print(link)
     # for link in taobao_links:
-    #     print link
+    #     print(link)
 
     for href in tmall_links + taobao_links:
         href = "https:" + href
         enqueueUrl(href)
 
     crawl(dequeuUrl())
-
 
 if __name__ == '__main__':
     crawl(start_url)

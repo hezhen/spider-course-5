@@ -22,7 +22,7 @@
 5. Fix AnyProxy crash issue:
 
     Replace [_/usr/local/lib/nodemodules/anyproxy/lib/requestHandler.js_]() with local **requestHandler.js**. Anyproxy crashes when connection is reset
-    For Windows System, find anyproxy's anyproxy root dir then replace **requestHandler.js**
+    For Windows System, find anyproxy's root dir then replace **requestHandler.js**
 
 6. Start AnyProxy
 
