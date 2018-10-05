@@ -2,42 +2,46 @@
 import hashlib
 from collections import deque
 from bloom_filter import BloomFilter
-
-# -*- coding: utf-8 -*-
 from selenium import webdriver
 import re
 from lxml import etree
 import time
 
-user_agent = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
-)
-
-# 进入浏览器设置
-options = webdriver.ChromeOptions()
-# 设置中文
-options.add_argument('lang=zh_CN.UTF-8')
-# specify the desired user agent
-options.add_argument('user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"')
-options.add_argument("start-maximized")
-options.add_argument("disable-infobars")
-options.add_argument("--disable-extensions")
-options.add_argument("--disable-plugins-discovery")
-
-# ---------- Important ----------------
-# 设置为 headless 模式，调试的时候可以去掉
-# -------------------------------------
-# options.add_argument("--headless")
-
-driver = webdriver.Chrome(chrome_options=options)
-driver.delete_all_cookies()
-
-start_url = "https://detail.tmall.com/item.htm?id=540212526343"
-
-driver.get(start_url)
-
 download_bf = BloomFilter(1024*1024*16, 0.01)
 cur_queue = deque()
+
+def create_driver():
+    user_agent = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
+    )
+
+    # 进入浏览器设置
+    options = webdriver.ChromeOptions()
+    # 设置中文
+    options.add_argument('lang=zh_CN.UTF-8')
+    # specify the desired user agent
+    options.add_argument('user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"')
+    options.add_argument("start-maximized")
+    options.add_argument("disable-infobars")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-plugins-discovery")
+
+    # ---------- Important ----------------
+    # 设置为 headless 模式，调试的时候可以去掉
+    # -------------------------------------
+    # options.add_argument("--headless")
+
+    driver = webdriver.Chrome(chrome_options=options)
+    driver.delete_all_cookies()
+    return driver
+
+def login(driver, username, password):
+    login_url = 'https://login.taobao.com/member/login.jhtml'
+    driver.get(login_url)
+    driver.execute_script("document.getElementById('J_Quick2Static').click()")
+    driver.execute_script("document.getElementById('TPL_username_1').value = '{}'".format(username))
+    driver.execute_script("document.getElementById('TPL_password_1').value = '{}'".format(password))
+    driver.execute_script("document.getElementById('J_SubmitStatic').click()")
 
 def enqueueUrl(url):
     try:
@@ -53,7 +57,7 @@ def enqueueUrl(url):
 def dequeuUrl():
     return cur_queue.popleft()
 
-def crawl(url):
+def crawl(driver, url):
     print('crawling ', url)
     # ignore ssl error, optionally can set phantomjs path
     driver.get(url)
@@ -87,9 +91,8 @@ def crawl(url):
     # 直接去除首尾空格
     title = title.strip()
 
-    print('+++++++++++++++++++++++++++++++++++++++++++++')
+    print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
     print('Product: ', title, 'Price: ', real_price)
-    print('---------------------------------------------')
 
     # for link in tmall_links:
     #     print(link)
@@ -103,5 +106,10 @@ def crawl(url):
     crawl(dequeuUrl())
 
 if __name__ == '__main__':
-    crawl(start_url)
+    driver = create_driver()
+    username = 'abc'
+    password = 'password'
+    login(driver, username, password)
+    start_url = "https://detail.tmall.com/item.htm?id=561009686445"
+    crawl(driver, start_url)
     driver.close()

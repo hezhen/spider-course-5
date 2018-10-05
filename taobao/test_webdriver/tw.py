@@ -31,14 +31,19 @@ options.add_argument("--disable-plugins-discovery")
 # options.add_argument('user-agent="Mozilla/5.0 (iPod; U; CPU iPhone OS 2_1 like Mac OS X; ja-jp) AppleWebKit/525.18.1 (KHTML, like Gecko) Version/3.1.1 Mobile/5F137 Safari/525.20"')
 driver = webdriver.Chrome(chrome_options=options)
 
-# driver.set_window_size(1920, 1200)  # optional
+driver.set_window_size(1920, 1200)  # optional
 driver.delete_all_cookies()
 
-# driver.execute_script("var s=window.document.createElement('script'); s.src='javascriptChrome.js';window.document.head.appendChild(s);")
+driver.execute_script("var s=window.document.createElement('script'); s.src='javascriptChrome.js';window.document.head.appendChild(s);")
 
 login_url = 'https://login.taobao.com/member/login.jhtml'
 
 driver.get(login_url)
+
+driver.execute_script("document.getElementById('J_Quick2Static').click()")
+driver.execute_script("document.getElementById('TPL_username_1').value = '{}'".format(username))
+driver.execute_script("document.getElementById('TPL_password_1').value = '{}'".format(password))
+driver.execute_script("document.getElementById('J_SubmitStatic').click()")
 
 # driver.execute_script("var s=window.document.createElement('script'); s.src='javascriptChrome.js';window.document.head.appendChild(s);")
 # driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => false,});")
