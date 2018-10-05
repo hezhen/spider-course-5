@@ -59,3 +59,5 @@ How do I set a proxy for phantomjs/ghostdriver in python webdriver?
 http://python.dzone.com/articles/python-testing-phantomjs
 
 # Files
+
+`selenium_crawler.py` Crawl taobao by using webdriver and headless chrome

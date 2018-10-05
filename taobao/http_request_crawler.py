@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-import urllib2
+import requests
 import re
 
 # custom header
@@ -13,29 +12,25 @@ headers = {
 }
 
 if __name__ == '__main__':
-
-    item_url = "https://detail.tmall.com/item.htm?id=540212526343"
-
+    item_url = "https://detail.tmall.com/item.htm?id=561009686445"
 
     try:
         # ignore ssl error, optionally can set phantomjs path
-        req = urllib2.Request(item_url, headers=headers)
-        response = urllib2.urlopen(req)
-        content = response.read()
+        r = requests.get(item_url, headers=headers)
 
         with open('tmall_url.html', 'w+') as f:
-            f.write(content)
+            f.write(r.text)
 
         # 使用 (pattern) 进行获取匹配
         # +? 使用非贪婪模式
         # [^>\"\'\s] 匹配任意不为 > " ' 空格 制表符 的字符
-        tmall_links = re.findall('href=[\"\']{1}(//detail.tmall.com/item.htm[^>\"\'\s]+?)"', content)
-        taobao_links = re.findall('href=[\"\']{1}(//detail.taobao.com/item.htm[^>\"\'\s]+?)"', content)
+        tmall_links = re.findall('href=[\"\']{1}(//detail.tmall.com/item.htm[^>\"\'\s]+?)"', r.text)
+        taobao_links = re.findall('href=[\"\']{1}(//detail.taobao.com/item.htm[^>\"\'\s]+?)"', r.text)
 
         for link in tmall_links:
-            print link
+            print(link)
         for link in taobao_links:
-            print link
+            print(link)
 
-    except Exception, Arguments:
-        print Arguments
+    except Exception as err:
+        print(err)
