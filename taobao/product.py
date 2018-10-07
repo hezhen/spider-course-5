@@ -72,8 +72,7 @@ def crawl(driver, url):
     # 使用 (pattern) 进行获取匹配
     # +? 使用非贪婪模式
     # [^>\"\'\s] 匹配任意不为 > " ' 空格 制表符 的字符
-    tmall_links = re.findall('href=[\"\']{1}(//detail.tmall.com/item.htm[^>\"\'\s]+?)"', content)
-    taobao_links = re.findall('href=[\"\']{1}(//detail.taobao.com/item.htm[^>\"\'\s]+?)"', content)
+    product_links = re.findall('href=[\"\']{1}(//detail.(taobao|tmall).com/item.htm[^>\"\'\s]+?)"', content)
 
     etr = etree.HTML(content)
     item_price_list = etr.xpath('//span[@class="tm-price"]')
@@ -94,12 +93,10 @@ def crawl(driver, url):
     print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
     print('Product: ', title, 'Price: ', real_price)
 
-    # for link in tmall_links:
-    #     print(link)
-    # for link in taobao_links:
+    # for link in product_links:
     #     print(link)
 
-    for href in tmall_links + taobao_links:
+    for href in product_links:
         href = "https:" + href
         enqueueUrl(href)
 
