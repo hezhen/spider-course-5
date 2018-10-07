@@ -22,4 +22,5 @@
 
 # Files
 
-`selenium_crawler.py` Crawl taobao by using webdriver and headless chrome
+`shop.py` Crawl all products from specified shop
+`product.py` Crawl related products boosted from a given product
