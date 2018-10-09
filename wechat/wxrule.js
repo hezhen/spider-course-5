@@ -1,6 +1,6 @@
 var logMap = {}
 var fs = require('fs');
-var logger = fs.createWriteStream('/Users/hezhen/Sites/dev/wechat/urlLog.log', {
+var logger = fs.createWriteStream('./urlLog.log', {
     flags: 'a' // 'a' means appending (old data will be preserved)
 })
 

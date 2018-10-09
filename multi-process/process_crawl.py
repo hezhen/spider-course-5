@@ -2,7 +2,7 @@ import urllib3
 from collections import deque
 import json
 from lxml import etree
-from pybloomfilter import BloomFilter
+from bloom_filter import BloomFilter
 import threading
 import time
 from dbmanager import CrawlDatabaseManager
@@ -42,7 +42,7 @@ def get_page_content(cur_url, index, depth):
     except Exception as err:
         print('Exception: ' + err)
         return
-    # print( 'add ' + hashlib.md5(cur_url).hexdigest() + ' to list')
+    # print( 'add ' + hashlib.md5(cur_url.encode('utf8')).hexdigest() + ' to list')
 
     html = etree.HTML(html_page.lower().decode('utf-8'))
     hrefs = html.xpath(u"//a")

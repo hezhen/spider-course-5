@@ -5,9 +5,12 @@ from mysql.connector import errorcode
 
 class MysqlMgr:
 
-    DB_NAME = 'wx'
-
-    SERVER_IP = 'localhost'
+    dbconfig = {
+        "database": 'wx',
+        "user":     "root",
+        "password": "callmepapa",
+        "host":     'localhost',
+    }
 
     TABLES = {}
     # create new table, using sql
@@ -36,7 +39,7 @@ class MysqlMgr:
     def __init__(self, max_num_thread):
         # connect mysql server
         try:
-            cnx = mysql.connector.connect(host=self.SERVER_IP, user='root', password='amei')
+            cnx = mysql.connector.connect(host=self.dbconfig['host'], user=self.dbconfig['user'], password=self.dbconfig['password'], auth_plugin='mysql_native_password')
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
@@ -50,12 +53,12 @@ class MysqlMgr:
 
         # use database, create it if not exist
         try:
-            cnx.database = self.DB_NAME
+            cnx.database = self.dbconfig['database']
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_BAD_DB_ERROR:
                 # create database and table
                 self.create_database(cursor)
-                cnx.database = self.DB_NAME
+                cnx.database = self.dbconfig['database']
                 self.create_tables(cursor)
             else:
                 print(err)
@@ -64,22 +67,16 @@ class MysqlMgr:
             cursor.close()
             cnx.close()
 
-        dbconfig = {
-            "database": self.DB_NAME,
-            "user":     "root",
-            "password": "amei",
-            "host":     self.SERVER_IP,
-        }
         self.cnxpool = mysql.connector.connect(pool_name="mypool",
                                                           pool_size=max_num_thread,
-                                                          **dbconfig)
+                                                          **self.dbconfig)
 
 
     # create databse
     def create_database(self, cursor):
         try:
             cursor.execute(
-                "CREATE DATABASE {} DEFAULT CHARACTER SET 'utf8'".format(self.DB_NAME))
+                "CREATE DATABASE {} DEFAULT CHARACTER SET 'utf8'".format(self.dbconfig['database']))
         except mysql.connector.Error as err:
             print("Failed creating database: {}".format(err))
             exit(1)

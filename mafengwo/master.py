@@ -100,7 +100,7 @@ class CrawlMaster:
 		for url, pr in pageranks.iteritems():
 			print( 'updating %s pr: %f' % (url, pr))
 			record = {'pr': pr}
-			self.db.mfw.update_one({'_id': hashlib.md5(url).hexdigest()}, {'$set': record}, upsert=False)
+			self.db.mfw.update_one({'_id': hashlib.md5(url.encode('utf8')).hexdigest()}, {'$set': record}, upsert=False)
 
 
 	def periodical_check(self):

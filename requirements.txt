@@ -6,3 +6,4 @@ pymongo
 mysql-connector
 selenium
 lxml
+aiohttp

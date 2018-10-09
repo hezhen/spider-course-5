@@ -1,21 +1,37 @@
 # Install AnyProxy
-### Install NodeJS first
-Linux:       $ yum install nodejs 
+1. Install NodeJS first
 
-Windows:  https://nodejs.org/dist/v9.0.0/node-v9.0.0-x86.msi
+    Linux:      `$ yum install nodejs`
 
-### Change NPM to use taobao repository
-$ npm install -g cnpm --registry=https://registry.npm.taobao.org
+    Windows:    https://nodejs.org/dist/v10.11.0/node-v10.11.0-x86.msi
 
-### Install AnyPorxy
-npm install -g anyproxy@beta
+    Mac:        `$ brew install`
 
-### Generate root certificate and trust it
-anyproxy-ca
+2. Change NPM to use taobao repository
 
-### Start AnyProxy ( -i means parse https )
-Use --rule to specify rule defined by javascript
-anyproxy -i --rule wxrule.js
+    `$ npm install -g cnpm --registry=https://registry.npm.taobao.org`
+
+3. Install AnyPorxy
+
+    `$ npm install -g anyproxy`
+
+4. Generate root certificate and trust it
+
+    `$ anyproxy-ca`
+
+5. Fix AnyProxy crash issue:
+
+    Replace [_/usr/local/lib/nodemodules/anyproxy/lib/requestHandler.js_]() with local **requestHandler.js**. Anyproxy crashes when connection is reset
+    For Windows System, find anyproxy's root dir then replace **requestHandler.js**
+
+6. Start AnyProxy
+
+    Use --rule to specify rule defined by javascript, -i means parse https, and --ws-intercept means mornitor websocket
+    `anyproxy -i -r wxrule.js --ws-intercept`
+
+# Evnironment
+1. set username, host and password to dbconfig of mysqlmgr.py for Mysql config
+2. set config info for mongodb in mongomgr.py
 
 
 # Files
@@ -28,3 +44,10 @@ anyproxy -i --rule wxrule.js
 -- mongomgr.py MongoDB 数据库代码，用来存储抓取的微信公众号历史消息
 
 -- webservice.py 后台的web服务，基于 python3，可以通过 http://127.0.0.1:9999 来访问
+
+# Run it
+1. Open url [http://[Your Computer IP]:8002]() to install certificate to your mobile phone. On iPhone, you must also trust the certificate at **General -> About -> Certificate Trust Settings**
+2. Set proxy to Host: [Your Computer IP], Port: 8001 on your mobile phone
+3. Start webservice: `python3 webservice.py`
+4. Make sure MongoDB and Mysql server are correctly configured and started
+5. Run anyproxy: `anyproxy -i -r biz_collect_rule.js` to collect wechat accounts or `anyproxy -i -r wxrule` to save wechat articles

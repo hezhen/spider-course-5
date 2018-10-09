@@ -56,7 +56,7 @@ class MongoRedisUrlManager:
 
     def finishUrl(self, url):
         record = {'status': 'done', 'done_time': datetime.utcnow()}
-        self.db.mfw.update({'_id': hashlib.md5(url).hexdigest()}, {'$set': record}, upsert=False)
+        self.db.mfw.update({'_id': hashlib.md5(url.encode('utf8')).hexdigest()}, {'$set': record}, upsert=False)
 
     def clear(self):
         self.redis_client.flushall()

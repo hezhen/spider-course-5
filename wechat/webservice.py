@@ -95,12 +95,13 @@ async def report_msg_home(request):
 
     resp.content_type = 'text/plain'
     await resp.prepare(request)
+
     if running_state == STATE_IN_TRANSACTION:
         # inject javascript code so that it redirects to a new Wechat Account Home
         running_state = STATE_RUNNING
-        resp.write(("https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=" + bizs.pop() + "&scene=124#wechat_redirect").encode('utf8'))
+        await resp.write(("https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=" + bizs.pop() + "&scene=124#wechat_redirect").encode('utf8'))
     else:
-        resp.write("NULL".encode('utf8'))
+        await resp.write("NULL".encode('utf8'))
     await resp.write_eof()
     return resp
 
