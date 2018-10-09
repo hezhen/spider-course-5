@@ -2,7 +2,7 @@ import urllib3
 from collections import deque
 import json
 from lxml import etree
-from pybloomfilter import BloomFilter
+from bloom_filter import BloomFilter
 import threading
 import time
 from dbmanager import CrawlDatabaseManager

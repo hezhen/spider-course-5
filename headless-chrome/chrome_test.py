@@ -7,7 +7,7 @@ from selenium import webdriver
 import re
 from lxml import etree
 import time
-from pybloomfilter import BloomFilter
+from bloom_filter import BloomFilter
 
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 

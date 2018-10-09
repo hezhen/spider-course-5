@@ -40,10 +40,13 @@ login_url = 'https://login.taobao.com/member/login.jhtml'
 
 driver.get(login_url)
 
+username = 'abc'
+password = 'test'
+
 driver.execute_script("document.getElementById('J_Quick2Static').click()")
 driver.execute_script("document.getElementById('TPL_username_1').value = '{}'".format(username))
 driver.execute_script("document.getElementById('TPL_password_1').value = '{}'".format(password))
-driver.execute_script("document.getElementById('J_SubmitStatic').click()")
+# driver.execute_script("document.getElementById('J_SubmitStatic').click()")
 
 # driver.execute_script("var s=window.document.createElement('script'); s.src='javascriptChrome.js';window.document.head.appendChild(s);")
 # driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => false,});")
