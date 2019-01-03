@@ -1,34 +1,32 @@
 import mysql.connector
 from mysql.connector import errorcode
 from mysql.connector import pooling
-import httplib
-import hashlib
 import time 
 
-class CrawlDatabaseManager:
-
-    DB_NAME = 'mfw_pro_crawl'
-
-    SERVER_IP = '127.0.0.1'
+class MysqlManager:
+    
+    dbconfig = {
+        "database": "douyin",
+        "user":     "root",
+        "password": "password",
+        "host":     "localhost"
+    }
 
     TABLES = {}
     TABLES['urls'] = (
         "CREATE TABLE `urls` ("
         "  `index` int(11) NOT NULL AUTO_INCREMENT,"
         "  `url` varchar(512) NOT NULL,"
-        "  `md5` varchar(32) NOT NULL,"
-        "  `status` varchar(11) NOT NULL DEFAULT 'new',"
-        "  `depth` int(11) NOT NULL,"
-        "  `queue_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-        "  `done_time` timestamp NOT NULL DEFAULT 0,"
+        "  `status` char(20) NOT NULL DEFAULT 'new',"
+        "  `queue_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+        "  `done_time` timestamp NOT NULL DEFAULT '1970-01-02 00:00:00',"
         "  PRIMARY KEY (`index`),"
-        "  UNIQUE KEY `md5` (`md5`)"
+        "  UNIQUE (`url`)"
         ") ENGINE=InnoDB")
-
 
     def __init__(self, max_num_thread):
         try:
-            cnx = mysql.connector.connect(host=self.SERVER_IP, user='root')
+            cnx = mysql.connector.connect(host=self.dbconfig['host'], user=self.dbconfig['user'], password=self.dbconfig['password'])
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
@@ -41,11 +39,11 @@ class CrawlDatabaseManager:
         cursor = cnx.cursor()
 
         try:
-            cnx.database = self.DB_NAME  
+            cnx.database = self.dbconfig['database']
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_BAD_DB_ERROR:
                 self.create_database(cursor)
-                cnx.database = self.DB_NAME
+                cnx.database = self.dbconfig['database']
                 self.create_tables(cursor)
             else:
                 print(err)
@@ -54,26 +52,21 @@ class CrawlDatabaseManager:
             cursor.close()
             cnx.close()
 
-        dbconfig = {
-            "database": self.DB_NAME,
-            "user":     "root",
-            "host":     self.SERVER_IP,
-        }
         self.cnxpool = mysql.connector.pooling.MySQLConnectionPool(pool_name = "mypool",
                                                           pool_size = max_num_thread,
-                                                          **dbconfig)
+                                                          **self.dbconfig)
 
 
     def create_database(self, cursor):
         try:
             cursor.execute(
-                "CREATE DATABASE {} DEFAULT CHARACTER SET 'utf8'".format(self.DB_NAME))
+                "CREATE DATABASE {} DEFAULT CHARACTER SET 'utf8'".format(self.dbconfig['database']))
         except mysql.connector.Error as err:
             print("Failed creating database: {}".format(err))
             exit(1)
 
     def create_tables(self, cursor):
-        for name, ddl in self.TABLES.iteritems():
+        for name, ddl in self.TABLES.items():
             try:
                 cursor.execute(ddl)
             except mysql.connector.Error as err:
@@ -85,16 +78,16 @@ class CrawlDatabaseManager:
                 print('Tables created')
 
 
-    def enqueueUrl(self, url, depth):
+    def enqueueUrl(self, url):
         con = self.cnxpool.get_connection()
         cursor = con.cursor()
         try:
-            add_url = ("INSERT INTO urls (url, md5, depth) VALUES (%s, %s, %s)")
-            data_url = (url, hashlib.md5(url.encode('utf8')).hexdigest(), depth)
-            cursor.execute(add_url, data_url)
+            sql = "INSERT INTO urls(url) VALUES ('{}')".format(url)
+            print(sql)
+            cursor.execute((sql))
             con.commit()
         except mysql.connector.Error as err:
-            # print('enqueueUrl() ' + err.msg)
+            print('enqueueUrl() ' + err.msg)
             return
         finally:
             cursor.close()
@@ -105,17 +98,19 @@ class CrawlDatabaseManager:
         con = self.cnxpool.get_connection()
         cursor = con.cursor(dictionary=True)
         try:
-            query = ("SELECT `index`, `url`, `depth` FROM urls WHERE status='new' ORDER BY `index` ASC LIMIT 1 FOR UPDATE")
-            cursor.execute(query)
-            if cursor.rowcount is 0:
-                return None
-            row = cursor.fetchone()
-            update_query = ("UPDATE urls SET `status`='downloading' WHERE `index`=%d") % (row['index'])
+            const_id = "%.9f" % time.time()
+            update_query = ("UPDATE urls SET status='{}' WHERE status='new' LIMIT 1".format(const_id))
             cursor.execute(update_query)
             con.commit()
+
+            query = ("SELECT `index`, `url` FROM urls WHERE status='{}'".format(const_id))
+            cursor.execute(query)
+            row = cursor.fetchone()
+            if row is None:
+                return None
             return row
         except mysql.connector.Error as err:
-            # print('dequeueUrl() ' + err.msg)
+            print('dequeueUrl() ' + err.msg)
             return None
         finally:
             cursor.close()
@@ -135,3 +130,9 @@ class CrawlDatabaseManager:
         finally:
             cursor.close()
             con.close()
+
+if __name__ == "__main__":
+    mysql_mgr = MysqlManager(8)
+    # for i in range(0, 100):
+    #     mysql_mgr.enqueueUrl('https://www.douyin.com/all-{}'.format(i))
+    print(mysql_mgr.dequeueUrl())
