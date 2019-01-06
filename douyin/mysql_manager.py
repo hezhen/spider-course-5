@@ -85,7 +85,6 @@ class MysqlManager:
             sql = "INSERT INTO urls(url) VALUES ('{}')".format(url)
             # print(sql)
             cursor.execute((sql))
-            con.commit()
         except mysql.connector.Error as err:
             print('enqueue_url() ' + err.msg)
             # print("Aready exist!")
@@ -102,7 +101,6 @@ class MysqlManager:
             const_id = "%.9f" % time.time()
             update_query = ("UPDATE urls SET status='{}' WHERE status='new' LIMIT 1".format(const_id))
             cursor.execute(update_query)
-            con.commit()
 
             query = ("SELECT `id`, `url` FROM urls WHERE status='{}'".format(const_id))
             # query = ("SELECT `index`, `url` FROM urls LIMIT 1")
