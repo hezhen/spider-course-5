@@ -16,7 +16,6 @@ with open('videos.json', 'r') as f:
         if len(line) < 10:
             continue
 
-
         # urls = re.findall('http://v3-dy.ixigua.com[^\"]+', json_str)
         obj = json.loads(line)
 

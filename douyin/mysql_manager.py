@@ -8,7 +8,7 @@ class MysqlManager:
     dbconfig = {
         "database": "douyin",
         "user":     "root",
-        "password": "password",
+        "password": "",
         "host":     "localhost"
     }
 
@@ -85,6 +85,7 @@ class MysqlManager:
             sql = "INSERT INTO urls(url) VALUES ('{}')".format(url)
             # print(sql)
             cursor.execute((sql))
+            con.commit()
         except mysql.connector.Error as err:
             print('enqueue_url() ' + err.msg)
             # print("Aready exist!")
@@ -98,6 +99,7 @@ class MysqlManager:
         con = self.cnxpool.get_connection()
         cursor = con.cursor(dictionary=True)
         try:
+            con.start_transaction()
             const_id = "%.9f" % time.time()
             update_query = ("UPDATE urls SET status='{}' WHERE status='new' LIMIT 1".format(const_id))
             cursor.execute(update_query)
@@ -105,7 +107,10 @@ class MysqlManager:
             query = ("SELECT `id`, `url` FROM urls WHERE status='{}'".format(const_id))
             # query = ("SELECT `index`, `url` FROM urls LIMIT 1")
             cursor.execute(query)
+
             row = cursor.fetchone()
+            con.commit()
+
             if row is None:
                 return None
             return row
@@ -120,15 +125,17 @@ class MysqlManager:
         con = self.cnxpool.get_connection()
         cursor = con.cursor(dictionary=True)
         try:
+            con.start_transaction()
             const_id = "%.9f" % time.time()
             update_query = ("UPDATE urls SET status='{}' WHERE status='new' LIMIT {}".format(const_id, size))
             cursor.execute(update_query)
-            con.commit()
+            
 
             query = ("SELECT `id`, `url` FROM urls WHERE status='{}'".format(const_id))
             # query = ("SELECT `index`, `url` FROM urls LIMIT {}".format(size))
             cursor.execute(query)
             rows = cursor.fetchall()
+            con.commit()
             if rows is None:
                 return None
             return rows
