@@ -41,10 +41,11 @@ class WeiboFeedCrawler:
     payload = "username={}&password={}&savestate=1&ec=0&entry=mweibo&mainpageflag=1"
 
     def __init__(self, url, reply_limit = 0):
+        self.post_url = re.sub('http[s]?://.*?/', 'https://m.weibo.cn/', url)
         self.username = '18600663368'
         self.password = 'Xi@oxiang66'
         self.payload = self.payload.format(self.username, self.password)
-        self.post_url = url
+        
         self.reply_limit = reply_limit
         self.pattern = re.compile('<.*>')
         self.max_id = None
@@ -72,6 +73,11 @@ class WeiboFeedCrawler:
             cookie = f.read()
         self.headers['cookie'] = cookie
 
+    def extract_item(self, key, data):
+        if key in data:
+            return data[key]
+        return ''
+
     def get_post(self):
         self.post_response = requests.get(self.post_url, headers = self.headers)
         c = self.post_response.text
@@ -88,9 +94,9 @@ class WeiboFeedCrawler:
             self.id = render_data['id']
             self.mid = render_data['mid']
             self.reply_count = render_data['comments_count']
-            self.post_title = render_data['page_info']['title']
-            self.post_content1 = render_data['page_info']['content1']
-            self.post_content2 = render_data['page_info']['content2']
+            self.post_title = self.extract_item('title', render_data['page_info'])
+            self.post_content1 = self.extract_item('content1', render_data['page_info'])
+            self.post_content2 = self.extract_item('content2', render_data['page_info'])
 
             # resize the limit according to size of replies
             self.reply_limit = min(self.reply_limit, self.reply_count)
