@@ -21,16 +21,28 @@ class WeiboFeedCrawler:
         'accept-encoding': "gzip, deflate, br",
         'accept-language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
         'connection': "keep-alive",
-        'content-type': "application/x-www-form-urlencoded",
         'origin': "https://passport.weibo.cn",
-        'referer': "https://passport.weibo.cn/signin/login?entry=mweibo&res=wel&wm=3349&r=https%3A%2F%2Fm.weibo.cn%2Fstatus%2FHbclHn7NG%3F",
         'user-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
         'cache-control': "no-cache"
     }
 
+    login_headers = {
+        'origin': "https://passport.weibo.cn",
+        'user-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
+        'content-type': "application/x-www-form-urlencoded",
+        'accept': "*/*",
+        'referer': "https://passport.weibo.cn/signin/login",
+        'accept-encoding': "gzip, deflate, br",
+        'accept-language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        'cache-control': "no-cache"
+    }
+
+    payload = "username={}&password={}&savestate=1&ec=0&entry=mweibo&mainpageflag=1"
+
     def __init__(self, username, password, url, reply_limit = 0):
         self.username = username
         self.password = password
+        self.payload = self.payload.format(username, password)
         self.post_url = url
         self.reply_limit = reply_limit
         self.pattern = re.compile('<.*>')
@@ -38,28 +50,29 @@ class WeiboFeedCrawler:
         self.replies = []
 
     def login(self):
-        if self.check_cookie_file() and (time.time() - os.path.getmtime(cookie_fn)) < 86400:
-            return self.load_session()
+        if self.check_cookie_file() and (time.time() - os.path.getmtime(cookie_fn)) < 86400 * 5:
+            self.load_cookie()
+            return
+        # TODO: Use selenium to login
+        response = requests.request("POST", self.login_url, data=self.payload, headers=self.login_headers)
+        cookie = ''
+        for k,v in response.cookies.iteritems():
+            cookie += k + '=' + v + ';'
+        cookie = cookie[:-1]
+        with open(cookie_fn, 'w') as f:
+            f.write(cookie)
+        self.headers['cookie'] = cookie
 
-        payload = ( "username={}&password={}&savestate=1&r=https%3A%2F%2Fm.weibo.cn%2Fstatus%2F"
-                "HbclHn7NG%3F&ec=0&pagerefer=https%3A%2F%2Fpassport.weibo.cn%2Fsignin%2F"
-                "welcome%3Fentry%3Dmweibo%26r%3Dhttps%253A%252F%252Fm.weibo.cn%252Fstatus%252FHbclHn7NG%253F&entry=mweibo")
-        payload = payload.format(self.username, self.password)
-        requests.request("POST", self.login_url, data=payload, headers=self.headers)
-        self.session = requests.session()
-        with open(cookie_fn, 'wb') as f:
-            pickle.dump(self.session.cookies, f)
-    
     def check_cookie_file(self):
-        return os. path. isfile(cookie_fn)
+        return os.path.isfile(cookie_fn)
 
-    def load_session(self):
-        self.session = requests.session()  # or an existing session
-        with open(cookie_fn, 'rb') as f:
-            self.session.cookies.update(pickle.load(f))
+    def load_cookie(self):
+        with open(cookie_fn, 'r') as f:
+            cookie = f.read()
+        self.headers['cookie'] = cookie
 
     def get_post(self):
-        self.post_response = self.session.get(self.post_url)
+        self.post_response = requests.get(self.post_url, headers = self.headers)
         c = self.post_response.text
 
         match_objs = re.findall(r'var\s*\$render_data\s*=\s*([\s\S]*)\[0\]\s\|\|\s\{\};', c)
@@ -82,6 +95,8 @@ class WeiboFeedCrawler:
             self.reply_limit = min(self.reply_limit, self.reply_count)
 
             self.post_data = render_data
+
+            # start downloader to get pics and videos
             MediaLoader(self.post_data).get_objects()
 
             print(self.post_title)
@@ -96,7 +111,9 @@ class WeiboFeedCrawler:
             return
         else:
             reply_url = self.reply_url_1.format(self.id, self.mid, self.max_id)
-        response = self.session.get(reply_url)
+        print(reply_url)
+        response = requests.get(reply_url, headers = self.headers)
+        
         replies = json.loads(response.text)
         self.max_id = replies['data']['max_id']
 
@@ -135,7 +152,7 @@ def parse_app_arguments():
         args.url = 'https://m.weibo.cn/status/HbBPGhHHg'
 
     if args.password is None:
-        args.password = ''
+        args.password = 'Xi@oxiang66'
 
     if args.limit is None:
         args.limit = 200
