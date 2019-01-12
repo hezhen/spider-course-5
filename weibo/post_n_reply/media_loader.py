@@ -7,10 +7,10 @@ import time
 class MediaLoader:
     def __init__(self, json_obj):
         self.data = json_obj
-        self.objs = {}
-        self.objs['pics'] = []
+        self.media_files = {}
+        self.media_files['pics'] = []
 
-    def get_objects(self):
+    def get_media_files(self):
         type = None
         if 'pics' in self.data:
             self.parse_pics()
@@ -19,18 +19,18 @@ class MediaLoader:
             if self.data['page_info']['type'] == 'video':
                 self.parse_videos()
                 type = 'video'
-        return type, self.objs
+        return type, self.media_files
         
     def parse_pics(self):
         for pic in self.data['pics']:
             url = pic['large']['url']
-            self.objs['pics'].append(url)
+            self.media_files['pics'].append(url)
             t = Thread(target=self.download_pics, args=(url,))
             t.start()
 
     def parse_videos(self):
         pic_url = self.data['page_info']['page_pic']['url']
-        self.objs['pics'].append(pic_url)
+        self.media_files['pics'].append(pic_url)
         t = Thread(target=self.download_pics, args=(pic_url,))
         t.start()
 
@@ -44,7 +44,7 @@ class MediaLoader:
         else:
             video_filename = time.ctime() + '.mp4'
 
-        self.objs['video'] = video_filename
+        self.media_files['video'] = video_filename
 
         t = Thread(target=self.download_video, args=(video_url, video_filename, ))
         t.start()
@@ -66,4 +66,4 @@ if __name__ == "__main__":
     with open('test_data/pics.json', 'rb') as f:
         c = f.read()
     obj = json.loads(c)
-    print(MediaLoader(obj[0]['status']).get_objects())
+    print(MediaLoader(obj[0]['status']).get_media_files())

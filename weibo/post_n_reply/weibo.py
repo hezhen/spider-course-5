@@ -97,7 +97,7 @@ class WeiboFeedCrawler:
             self.post_data = render_data
 
             # start downloader to get pics and videos
-            MediaLoader(self.post_data).get_objects()
+            self.media_type, self.media_files = MediaLoader(self.post_data).get_media_files()
 
             print(self.post_title)
             print(self.post_content1)
@@ -135,12 +135,10 @@ class WeiboFeedCrawler:
         ret['title'] = self.post_title
         ret['content'] = self.post_content2
         ret['comments'] = self.replies
-        ret['type'] = self.post_type
-        ret['pics'] = self.pics
-        ret['video'] = self.video
+        ret['type'] = self.media_type
+        ret['media_files'] = self.media_files
 
         return ret
-
 
 class arguments:
     pass
