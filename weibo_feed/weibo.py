@@ -5,6 +5,8 @@ import pickle
 import os.path, time
 import re
 import json
+import argparse
+
 
 cookie_fn = 'weibo.cookie'
 
@@ -26,11 +28,14 @@ class WeiboFeedCrawler:
         'cache-control': "no-cache"
     }
 
-    def __init__(self, username, password, url):
+    def __init__(self, username, password, url, reply_limit = 0):
         self.username = username
         self.password = password
         self.post_url = url
+        self.reply_limit = reply_limit
         self.pattern = re.compile('<.*>')
+        self.max_id = None
+        self.replies = []
 
     def login(self):
         if self.check_cookie_file() and (time.time() - os.path.getmtime(cookie_fn)) < 86400:
@@ -62,9 +67,14 @@ class WeiboFeedCrawler:
             render_data = json.loads(match_objs[0])[0]
             self.id = render_data['status']['id']
             self.mid = render_data['status']['mid']
+            self.reply_count = render_data['status']['comments_count']
             self.post_title = render_data['status']['page_info']['title']
             self.post_content1 = render_data['status']['page_info']['content1']
             self.post_content2 = render_data['status']['page_info']['content2']
+
+            # resize the limit according to size of replies
+            self.reply_limit = min(self.reply_limit, self.reply_count)
+
             print(self.post_title)
             print(self.post_content1)
             print(self.post_content2)
@@ -73,6 +83,8 @@ class WeiboFeedCrawler:
     def get_replies(self):
         if self.max_id is None:
             reply_url = self.reply_url_0.format(self.id, self.mid)
+        elif self.max_id == 0:
+            return
         else:
             reply_url = self.reply_url_1.format(self.id, self.mid, self.max_id)
         response = self.session.get(reply_url)
@@ -81,17 +93,46 @@ class WeiboFeedCrawler:
 
         for reply in replies['data']['data']:
             r_text = reply['text']
-            print(self.pattern.sub('', r_text))
+            r_text = self.pattern.sub('', r_text)
+            self.replies.append(r_text)
+        
+        if len(self.replies) < self.reply_limit:
+            self.get_replies()
 
     def start(self):
-        self.max_id = None
         self.login()
         self.get_post()
         self.get_replies()
 
+class arguments:
+    pass
+
+def parse_app_arguments():
+    parser = argparse.ArgumentParser(prog='Weibo Feed Spider', description='Get a post and its replies from weibo')
+    parser.add_argument('-u', '--user', type=str, nargs=1, help='username of weibo')
+    parser.add_argument('-p', '--psssword', type=str, nargs=1, help='password of the weibo account')
+    parser.add_argument('-l', '--limit', type=int, nargs=1, help='limit of replies to download')
+    parser.add_argument('-a', '--url', type=str, nargs=1, help='url of the post')
+    
+    args = arguments()
+
+    parser.parse_args(namespace=args)
+
+    if args.user is None:
+        args.user = '18600663368'
+
+    if args.url is None:
+        args.url = 'https://m.weibo.cn/status/HbvLv54Lc'
+
+    if args.password is None:
+        args.password = ''
+
+    if args.limit is None:
+        args.limit = 200
+
+    return args
+
 if __name__ == "__main__":
-    if len(sys.argv) == 4:
-        weibo_crawler = WeiboFeedCrawler(sys.argv[1], sys.argv[2], sys.argv[3])
-    else:
-        weibo_crawler = WeiboFeedCrawler('18600663368', '', 'https://m.weibo.cn/status/HbclHn7NG?')
+    args = parse_app_arguments()
+    weibo_crawler = WeiboFeedCrawler(args.user, args.password, args.url, args.limit)
     weibo_crawler.start()
