@@ -6,9 +6,9 @@ import os.path, time
 import re
 import json
 import argparse
+from media_loader import MediaLoader
 
-
-cookie_fn = 'weibo.cookie'
+cookie_fn = 'cookie'
 
 class WeiboFeedCrawler:
     login_url = "https://passport.weibo.cn/sso/login"
@@ -65,15 +65,24 @@ class WeiboFeedCrawler:
         match_objs = re.findall(r'var\s*\$render_data\s*=\s*([\s\S]*)\[0\]\s\|\|\s\{\};', c)
         if len(match_objs) > 0:
             render_data = json.loads(match_objs[0])[0]
-            self.id = render_data['status']['id']
-            self.mid = render_data['status']['mid']
-            self.reply_count = render_data['status']['comments_count']
-            self.post_title = render_data['status']['page_info']['title']
-            self.post_content1 = render_data['status']['page_info']['content1']
-            self.post_content2 = render_data['status']['page_info']['content2']
+            # In case of re-post
+            if 'retweeted_status' in render_data['status']:
+                render_data = render_data['status']['retweeted_status']
+            else:
+                render_data = render_data['status']
+
+            self.id = render_data['id']
+            self.mid = render_data['mid']
+            self.reply_count = render_data['comments_count']
+            self.post_title = render_data['page_info']['title']
+            self.post_content1 = render_data['page_info']['content1']
+            self.post_content2 = render_data['page_info']['content2']
 
             # resize the limit according to size of replies
             self.reply_limit = min(self.reply_limit, self.reply_count)
+
+            self.post_data = render_data
+            MediaLoader(self.post_data).get_objects()
 
             print(self.post_title)
             print(self.post_content1)
@@ -95,6 +104,7 @@ class WeiboFeedCrawler:
             r_text = reply['text']
             r_text = self.pattern.sub('', r_text)
             self.replies.append(r_text)
+            print('Reply:-------------\r\n', r_text)
         
         if len(self.replies) < self.reply_limit:
             self.get_replies()
@@ -110,7 +120,7 @@ class arguments:
 def parse_app_arguments():
     parser = argparse.ArgumentParser(prog='Weibo Feed Spider', description='Get a post and its replies from weibo')
     parser.add_argument('-u', '--user', type=str, nargs=1, help='username of weibo')
-    parser.add_argument('-p', '--psssword', type=str, nargs=1, help='password of the weibo account')
+    parser.add_argument('-p', '--password', type=str, nargs=1, help='password of the weibo account')
     parser.add_argument('-l', '--limit', type=int, nargs=1, help='limit of replies to download')
     parser.add_argument('-a', '--url', type=str, nargs=1, help='url of the post')
     
@@ -122,7 +132,7 @@ def parse_app_arguments():
         args.user = '18600663368'
 
     if args.url is None:
-        args.url = 'https://m.weibo.cn/status/HbvLv54Lc'
+        args.url = 'https://m.weibo.cn/status/HbBPGhHHg'
 
     if args.password is None:
         args.password = ''
