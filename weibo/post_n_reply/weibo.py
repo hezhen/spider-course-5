@@ -50,7 +50,7 @@ class WeiboFeedCrawler:
         self.replies = []
 
     def login(self):
-        if self.check_cookie_file() and (time.time() - os.path.getmtime(cookie_fn)) < 86400 * 5:
+        if self.check_cookie_file() and (time.time() - os.path.getmtime(cookie_fn)) < 86400:
             self.load_cookie()
             return
         # TODO: Use selenium to login

@@ -37,11 +37,13 @@ class MediaLoader:
         video_url = self.data['page_info']['media_info']['stream_url_hd']
         if video_url is None:
             video_url = self.data['page_info']['media_info']['stream_url']
-        re_result = re.findall(r'http://.*/(.*\.mp4)?', video_url)
+
+        re_result = re.findall(r'.*/(.*\.mp4)?', video_url)
         if len(re_result) > 0:
             video_filename = re_result[0]
         else:
             video_filename = time.ctime() + '.mp4'
+
         r = requests.get(video_url, stream = True)
         # download started 
         with open( video_filename, 'wb') as f: 
@@ -50,7 +52,7 @@ class MediaLoader:
                     f.write(chunk)
 
 if __name__ == "__main__":
-    with open('test_data/pics.json', 'rb') as f:
+    with open('test_data/video.json', 'rb') as f:
         c = f.read()
     obj = json.loads(c)
     MediaLoader(obj[0]['status']).get_objects()
