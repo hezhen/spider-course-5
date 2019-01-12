@@ -39,10 +39,10 @@ class WeiboFeedCrawler:
 
     payload = "username={}&password={}&savestate=1&ec=0&entry=mweibo&mainpageflag=1"
 
-    def __init__(self, username, password, url, reply_limit = 0):
-        self.username = username
-        self.password = password
-        self.payload = self.payload.format(username, password)
+    def __init__(self, url, reply_limit = 0):
+        self.username = '18600663368'
+        self.password = 'Xi@oxiang66'
+        self.payload = self.payload.format(self.username, self.password)
         self.post_url = url
         self.reply_limit = reply_limit
         self.pattern = re.compile('<.*>')
@@ -131,6 +131,17 @@ class WeiboFeedCrawler:
         self.get_post()
         self.get_replies()
 
+        ret = {}
+        ret['title'] = self.post_title
+        ret['content'] = self.post_content2
+        ret['comments'] = self.replies
+        ret['type'] = self.post_type
+        ret['pics'] = self.pics
+        ret['video'] = self.video
+
+        return ret
+
+
 class arguments:
     pass
 
@@ -161,5 +172,5 @@ def parse_app_arguments():
 
 if __name__ == "__main__":
     args = parse_app_arguments()
-    weibo_crawler = WeiboFeedCrawler(args.user, args.password, args.url, args.limit)
+    weibo_crawler = WeiboFeedCrawler(args.url, args.limit)
     weibo_crawler.start()
