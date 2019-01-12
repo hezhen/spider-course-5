@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 from threading import Thread
 import requests

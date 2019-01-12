@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import asyncio
 import re
@@ -23,7 +24,7 @@ async def crawl(request):
     ret =  crawler.start()
 
     await resp.prepare(request)
-    resp.write(json.dumps(ret))
+    await resp.write(json.dumps(ret).encode('utf8'))
     await resp.write_eof()
     return resp
 
@@ -37,7 +38,7 @@ async def intro(request):
     resp.content_length = len(binary)
     resp.content_type = 'text/plain'
     await resp.prepare(request)
-    resp.write(binary)
+    await resp.write(binary)
     return resp
 
 async def simple(request):
