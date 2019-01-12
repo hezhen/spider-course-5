@@ -39,3 +39,5 @@ Response is HTML, Use ***$render_data variable***<br>
 https://m.weibo.cn/comments/hotflow?id=4326690815511532&mid=4326690815511532&max_id_type=0<br>
 https://m.weibo.cn/comments/hotflow?id=4326690815511532&mid=4326690815511532&max_id=151614496548072&max_id_type=0<br>
 https://m.weibo.cn/comments/hotflow?id=4326690815511532&mid=4326690815511532&max_id=151202182752583&max_id_type=0<br>
+
+refer to ***pic_post.html*** and ***video_post.html*** for more details
