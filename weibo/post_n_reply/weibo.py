@@ -3,7 +3,7 @@ import os
 import json
 import re
 import time
-from pic_downloader import pic_downloader
+from media_loader import media_loader
 import datetime
 from mysql_manager import MysqlManager
 import sys
@@ -122,7 +122,7 @@ class WeiboCrawler():
         self.save_data( self.post['id'], post_data_str)
         self.mm.insert_data('post', self.post)
 
-        self.post_pics = pic_downloader().get_media_files(post_data)
+        self.post_pics = media_loader().get_media_files(post_data)
         for pic in self.post_pics:
             p = {}
             p['post_id'] = self.post['id']
