@@ -7,7 +7,7 @@ import textwrap
 import threading
 import time
 from subprocess import call
-from weibo import WeiboFeedCrawler
+from weibo import WeiboCrawler
 
 from aiohttp.web import Application, Response, StreamResponse, run_app
 import json
@@ -20,7 +20,7 @@ async def crawl(request):
         limit = data['limit']
     else:
         limit = 200
-    crawler = WeiboFeedCrawler(url, limit)
+    crawler = WeiboCrawler(url, limit)
     ret =  crawler.start()
 
     await resp.prepare(request)
@@ -30,8 +30,12 @@ async def crawl(request):
 
 async def intro(request):
     txt = textwrap.dedent("""\
-        Type {url}/hello/John  {url}/simple or {url}/change_body
-        in browser url bar
+        @param url url of weibo
+        @param limit maximum number of replies to grab
+        {
+            "url": "https://m.weibo.cn/detail/4329233171749375",
+            'limit": 100
+        }
     """).format(url='127.0.0.1:8080')
     binary = txt.encode('utf8')
     resp = StreamResponse()

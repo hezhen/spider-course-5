@@ -1,32 +1,23 @@
-# -*- coding: utf-8 -*-
-
 import requests
-import sys
-import pickle
-import os.path, time
-import re
+import os
 import json
-import argparse
-from media_loader import MediaLoader
+import re
+import time
+from pic_downloader import pic_downloader
+import datetime
+from mysql_manager import MysqlManager
+import sys
 
-cookie_fn = 'cookie'
+class WeiboCrawler():
 
-class WeiboFeedCrawler:
+    cookie_filename = 'cookie'
+
+    data_dir = './data'
+
     login_url = "https://passport.weibo.cn/sso/login"
 
-    reply_url_0 = 'https://m.weibo.cn/comments/hotflow?id={}&mid={}&max_id_type=0'
-    reply_url_1 = 'https://m.weibo.cn/comments/hotflow?id={}&mid={}&max_id={}&max_id_type=0'
+    payload = "username={}&password={}&savestate=1&mainpageflag=1&entry=mweibo&ec=0".format('18600663368', 'Xi@oxiang66')
     
-    headers = {
-        'accept': "*/*",
-        'accept-encoding': "gzip, deflate, br",
-        'accept-language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-        'connection': "keep-alive",
-        'origin': "https://passport.weibo.cn",
-        'user-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
-        'cache-control': "no-cache"
-    }
-
     login_headers = {
         'origin': "https://passport.weibo.cn",
         'user-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
@@ -38,144 +29,162 @@ class WeiboFeedCrawler:
         'cache-control': "no-cache"
     }
 
-    payload = "username={}&password={}&savestate=1&ec=0&entry=mweibo&mainpageflag=1"
+    post_url = 'https://m.weibo.cn/detail/{}'
+    reply_url_0 = 'https://m.weibo.cn/comments/hotflow?id={}&mid={}&max_id_type=0'
+    reply_url_1 = 'https://m.weibo.cn/comments/hotflow?id={}&mid={}&max_id={}&max_id_type=0'
 
-    def __init__(self, url, reply_limit = 0):
-        self.post_url = re.sub('http[s]?://.*?/', 'https://m.weibo.cn/', url)
-        self.username = '18600663368'
-        self.password = 'Xi@oxiang66'
-        self.payload = self.payload.format(self.username, self.password)
-        
-        self.reply_limit = reply_limit
-        self.pattern = re.compile('<.*>')
-        self.max_id = None
-        self.replies = []
+    comments = []
 
-    def login(self):
-        if self.check_cookie_file() and (time.time() - os.path.getmtime(cookie_fn)) < 86400:
-            self.load_cookie()
-            return
-        # TODO: Use selenium to login
-        response = requests.request("POST", self.login_url, data=self.payload, headers=self.login_headers)
-        cookie = ''
-        for k,v in response.cookies.iteritems():
-            cookie += k + '=' + v + ';'
-        cookie = cookie[:-1]
-        with open(cookie_fn, 'w') as f:
-            f.write(cookie)
-        self.headers['cookie'] = cookie
+    pattern = re.compile('<.*?>')
 
-    def check_cookie_file(self):
-        return os.path.isfile(cookie_fn)
+    def __init__(self, limit = 200 ):
+        self.reply_limit = limit
+        self.mm = MysqlManager(4)
+
+    def cookie_exist(self):
+        return os.path.isfile(self.cookie_filename)
+
+    def cookie_valid(self):
+        cookie_mid_time = os.path.getmtime(self.cookie_filename)
+        return cookie_mid_time + 86400 * 2 > time.time()
 
     def load_cookie(self):
-        with open(cookie_fn, 'r') as f:
+        with open(self.cookie_filename, 'r') as f:
             cookie = f.read()
-        self.headers['cookie'] = cookie
+        self.login_headers['cookie'] = cookie
+        return cookie
 
-    def extract_item(self, key, data):
-        if key in data:
-            return data[key]
-        return ''
+    def do_login(self):
+        response = requests.post(self.login_url, data=self.payload, headers=self.login_headers, allow_redirects=False)
 
-    def get_post(self):
-        self.post_response = requests.get(self.post_url, headers = self.headers)
-        c = self.post_response.text
+        cookie = ''
 
-        match_objs = re.findall(r'var\s*\$render_data\s*=\s*([\s\S]*)\[0\]\s\|\|\s\{\};', c)
-        if len(match_objs) > 0:
-            render_data = json.loads(match_objs[0])[0]
-            # In case of re-post
-            if 'retweeted_status' in render_data['status']:
-                render_data = render_data['status']['retweeted_status']
-            else:
-                render_data = render_data['status']
+        for k, v in response.cookies.iteritems():
+            cookie += k + '=' + v + ';'
+        cookie = cookie[:-1]
 
-            self.id = render_data['id']
-            self.mid = render_data['mid']
-            self.reply_count = render_data['comments_count']
-            self.post_title = self.extract_item('title', render_data['page_info'])
-            self.post_content1 = self.extract_item('content1', render_data['page_info'])
-            self.post_content2 = self.extract_item('content2', render_data['page_info'])
-
-            # resize the limit according to size of replies
-            self.reply_limit = min(self.reply_limit, self.reply_count)
-
-            self.post_data = render_data
-
-            # start downloader to get pics and videos
-            self.media_type, self.media_files = MediaLoader(self.post_data).get_media_files()
-
-            print(self.post_title)
-            print(self.post_content1)
-            print(self.post_content2)
-            print("============================================================")
-
-    def get_replies(self):
-        if self.max_id is None:
-            reply_url = self.reply_url_0.format(self.id, self.mid)
-        elif self.max_id == 0:
-            return
-        else:
-            reply_url = self.reply_url_1.format(self.id, self.mid, self.max_id)
-        print(reply_url)
-        response = requests.get(reply_url, headers = self.headers)
+        with open(self.cookie_filename, 'w') as f:
+            f.write(cookie)
         
-        replies = json.loads(response.text)
-        self.max_id = replies['data']['max_id']
-
-        for reply in replies['data']['data']:
-            r_text = reply['text']
-            r_text = self.pattern.sub('', r_text)
-            self.replies.append(r_text)
-            print('Reply:-------------\r\n', r_text)
-        
-        if len(self.replies) < self.reply_limit:
-            self.get_replies()
-
-    def start(self):
-        self.login()
-        self.get_post()
-        self.get_replies()
-
-        ret = {}
-        ret['title'] = self.post_title
-        ret['content'] = self.post_content2
-        ret['comments'] = self.replies
-        ret['type'] = self.media_type
-        ret['media_files'] = self.media_files
-
-        return ret
-
-class arguments:
-    pass
-
-def parse_app_arguments():
-    parser = argparse.ArgumentParser(prog='Weibo Feed Spider', description='Get a post and its replies from weibo')
-    parser.add_argument('-u', '--user', type=str, nargs=1, help='username of weibo')
-    parser.add_argument('-p', '--password', type=str, nargs=1, help='password of the weibo account')
-    parser.add_argument('-l', '--limit', type=int, nargs=1, help='limit of replies to download')
-    parser.add_argument('-a', '--url', type=str, nargs=1, help='url of the post')
+        login_headers['cookie'] = cookie
     
-    args = arguments()
+    def login(self):
+        # Check whether cookie is existed and valid
+        if self.cookie_exist() and self.cookie_valid():
+            cookie = self.load_cookie()
+            return
 
-    parser.parse_args(namespace=args)
+        # Call login API, login and save cookie
+        self.do_login()
 
-    if args.user is None:
-        args.user = '18600663368'
+    def assure_data_dir(self):
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
+    
+    def cleanup_text(self, text):
+        return self.pattern.sub('', text)
 
-    if args.url is None:
-        args.url = 'https://m.weibo.cn/status/HbBPGhHHg'
+    def save_data(self, filename, data):
+        self.assure_data_dir()
+        with open(self.data_dir + '/{}.json'.format(filename), 'w') as f:
+            f.write(data)
 
-    if args.password is None:
-        args.password = 'Xi@oxiang66'
+    def extract_var(self, html):
+        return re.findall(r'var\s\$render_data\s=\s(\[[\s\S]*\])\[0\]\s\|\|\s\{\}\;', html)[0]
 
-    if args.limit is None:
-        args.limit = 200
+    # Wed Jan 16 00:00:52 +0800 2019
+    # 2019-01-16 00:00:52
+    def convert_time_format(self, ts):
+        return datetime.datetime.strptime(ts, "%a %b %d %H:%M:%S %z %Y").strftime('%Y-%m-%d %H:%M:%S')
 
-    return args
+    def get_post(self, url, id = None):
+        response = requests.get(url, headers=self.login_headers)
+        post_data_str = self.extract_var(response.text)
+        post_data = json.loads(post_data_str)[0]['status']
+        # In case of re-post
+        if 'retweeted_status' in post_data:
+            render_data = post_data['retweeted_status']
+
+        self.post = {}
+
+        print(post_data['created_at'])
+        print(self.convert_time_format(post_data['created_at']))
+
+        self.post['id'] = post_data['id']
+        self.post['created_at'] = self.convert_time_format(post_data['created_at'])
+        self.post['text'] = self.cleanup_text(post_data['text'])
+        self.post['reposts_count'] = post_data['reposts_count']
+        self.post['comments_count'] = post_data['comments_count']
+        self.post['attitudes_count'] = post_data['attitudes_count']
+        post_data_user = post_data['user']
+        self.post['profile_image_url'] = post_data_user['profile_image_url']
+        self.post['user_id'] = post_data_user['id']
+        self.post['screen_name'] = post_data_user['screen_name']
+        self.save_data( self.post['id'], post_data_str)
+        self.mm.insert_data('post', self.post)
+
+        self.post_pics = pic_downloader().get_media_files(post_data['pics'])
+        for pic in self.post_pics:
+            p = {}
+            p['post_id'] = self.post['id']
+            p['url'] = pic
+            self.mm.insert_data('pic', p)
+    
+    def get_comments(self, self.post['id'], max_id):
+        if max_id == 0:
+            url = self.reply_url_0.format(self.post['id'], self.post['id'])
+        else:
+            url = self.reply_url_1.format(self.post['id'], self.post['id'], max_id)
+
+        response = requests.get(url, headers=self.login_headers)
+        reply_json_obj = json.loads(response.text)
+
+        reply_data = reply_json_obj['data']['data']
+
+        comment = {}
+
+        for r in reply_data:
+            comment['created_at'] = self.convert_time_format(r['created_at'])
+            comment['id'] = r['id']
+            comment['post_id'] = self.post['id']
+            comment['text'] = self.cleanup_text(r['text'])
+            r_data_user = r['user']
+            comment['profile_image_url'] = r_data_user['profile_image_url']
+            comment['user_id'] = r_data_user['id']
+            comment['screen_name'] = r_data_user['screen_name']
+            self.comments.append(comment)
+            self.mm.insert_data('comment', comment)
+
+        self.save_data( self.post['id'] + '-{}'.format(max_id), response.text)
+        
+        if len(self.comments) >= reply_json_obj['data']['total_number']:
+            return 
+
+        if self.reply_limit is not 0 and len(self.comments) > int(self.reply_limit):
+            return
+
+        time.sleep(2)
+        self.get_comments(self.post['id'], reply_json_obj['data']['max_id'])
+    
+    def run(self, url):
+        self.get_post(url)
+        self.get_comments(wb_crawler.post['id'], 0)
+
+        return self.post, self.comments, self.post_pics
+        
 
 if __name__ == "__main__":
-    args = parse_app_arguments()
-    weibo_crawler = WeiboFeedCrawler(args.url, args.limit)
-    weibo_crawler.start()
+    if len(sys.argv) == 1:
+        print("Must specify Weibo Feed ID")
+        exit(0)
+
+    limit = 100
+    arg_len = len(sys.argv)
+
+    if arg_len > 2:
+        limit = sys.argv[2]
+    url = sys.argv[1]
+
+    wb_crawler = WeiboCrawler(limit)
+    wb_crawler.login()
+    wb_crawler.run(url)
