@@ -40,6 +40,7 @@ class WeiboCrawler():
     def __init__(self, limit = 200 ):
         self.reply_limit = limit
         self.mm = MysqlManager(4)
+        self.post = {}
 
     def cookie_exist(self):
         return os.path.isfile(self.cookie_filename)
@@ -71,7 +72,7 @@ class WeiboCrawler():
     def login(self):
         # Check whether cookie is existed and valid
         if self.cookie_exist() and self.cookie_valid():
-            cookie = self.load_cookie()
+            self.load_cookie()
             return
 
         # Call login API, login and save cookie
@@ -104,8 +105,6 @@ class WeiboCrawler():
         # In case of re-post
         if 'retweeted_status' in post_data:
             post_data = post_data['retweeted_status']
-
-        self.post = {}
 
         print(post_data['created_at'])
         print(self.convert_time_format(post_data['created_at']))
