@@ -66,7 +66,7 @@ class WeiboCrawler():
         with open(self.cookie_filename, 'w') as f:
             f.write(cookie)
         
-        login_headers['cookie'] = cookie
+        self.login_headers['cookie'] = cookie
     
     def login(self):
         # Check whether cookie is existed and valid
@@ -103,7 +103,7 @@ class WeiboCrawler():
         post_data = json.loads(post_data_str)[0]['status']
         # In case of re-post
         if 'retweeted_status' in post_data:
-            render_data = post_data['retweeted_status']
+            post_data = post_data['retweeted_status']
 
         self.post = {}
 
@@ -123,14 +123,14 @@ class WeiboCrawler():
         self.save_data( self.post['id'], post_data_str)
         self.mm.insert_data('post', self.post)
 
-        self.post_pics = pic_downloader().get_media_files(post_data['pics'])
+        self.post_pics = pic_downloader().get_media_files(post_data)
         for pic in self.post_pics:
             p = {}
             p['post_id'] = self.post['id']
             p['url'] = pic
             self.mm.insert_data('pic', p)
     
-    def get_comments(self, self.post['id'], max_id):
+    def get_comments(self, max_id):
         if max_id == 0:
             url = self.reply_url_0.format(self.post['id'], self.post['id'])
         else:
@@ -164,11 +164,11 @@ class WeiboCrawler():
             return
 
         time.sleep(2)
-        self.get_comments(self.post['id'], reply_json_obj['data']['max_id'])
+        self.get_comments(reply_json_obj['data']['max_id'])
     
     def run(self, url):
         self.get_post(url)
-        self.get_comments(wb_crawler.post['id'], 0)
+        self.get_comments(0)
 
         return self.post, self.comments, self.post_pics
         

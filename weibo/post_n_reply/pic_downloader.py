@@ -4,6 +4,7 @@ from threading import Thread
 import re
 import requests
 import os
+import time
 
 class pic_downloader():
     res_dir = './res'
@@ -20,7 +21,7 @@ class pic_downloader():
     def get_media_files(self):
         type = None
         if 'pics' in self.data:
-            pic_urls = [x['large']['url'] for x in pics]
+            pic_urls = [x['large']['url'] for x in self.data['pics']]
             type = 'pics'
             t = Thread(target=self.download_pics, args=(pic_urls,))
             t.start()
